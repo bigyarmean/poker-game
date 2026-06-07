@@ -520,6 +520,28 @@
     justify-content: center;
   }
 
+  .controls-area {
+    margin-top: 24px;
+  }
+  .controls-area .controls { margin-top: 0; }
+  .controls-tip {
+    margin-top: 12px;
+    text-align: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--gold-dark);
+    letter-spacing: 0.04em;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    align-items: center;
+  }
+  .controls-tip .tip-item {
+    padding: 4px 12px;
+    border-left: 2px solid var(--gold-dark);
+    opacity: 0.85;
+  }
+
   .btn {
     font-family: 'Cinzel', 'Manrope', sans-serif;
     font-weight: 500;
@@ -2149,7 +2171,8 @@ function deal() {
 function getHandOptions(hand) {
   return {
     canDouble: hand.cards.length === 2 && !hand.doubled && !hand.fromSplitAces && state.bankroll >= hand.bet,
-    canSplit: isPair(hand.cards) && !hand.doubled && state.hands.length < 4 && state.bankroll >= hand.bet,
+    canSplit: isPair(hand.cards) && !hand.doubled && state.hands.length < 4 && state.bankroll >= hand.bet
+      && !(hand.fromSplitAces && !RULES.resplitAces),
     canSurrender: RULES.surrender && hand.cards.length === 2 && !hand.fromSplit && state.hands.length === 1
   };
 }
@@ -2461,8 +2484,18 @@ function doSplit() {
   if (state.bankroll < hand.bet) return;
   state.bankroll -= hand.bet;
   const wasAces = hand.cards[0].rank === 'A';
+
+  // Take the second card off the original hand to seed the new hand
+  const movedCard = hand.cards.pop();
+
+  // Deal to the ORIGINAL hand first (proper dealer protocol)
+  hand.cards.push(drawCard());
+  hand.fromSplit = true;
+  hand.fromSplitAces = wasAces;
+
+  // Then create + deal to the new hand
   const newHand = {
-    cards: [hand.cards.pop(), drawCard()],
+    cards: [movedCard, drawCard()],
     bet: hand.bet,
     doubled: false,
     surrendered: false,
@@ -2472,9 +2505,6 @@ function doSplit() {
     result: null,
     payout: 0
   };
-  hand.cards.push(drawCard());
-  hand.fromSplit = true;
-  hand.fromSplitAces = wasAces;
 
   // Insert new hand right after current
   state.hands.splice(state.active + 1, 0, newHand);
@@ -2484,6 +2514,12 @@ function doSplit() {
     hand.stood = true;
     newHand.stood = true;
     advanceHand();
+  } else {
+    // Auto-stand any post-split hand that lands on 21 (no decision to make)
+    if (handInfo(hand.cards).total === 21) hand.stood = true;
+    if (handInfo(newHand.cards).total === 21) newHand.stood = true;
+    // If the active hand was auto-stood, advance to the next live hand
+    if (hand.stood) advanceHand();
   }
   render();
 }
@@ -2896,7 +2932,9 @@ function buildBettingArea() {
 
 function buildPlayerControls() {
   const wrap = document.createElement('div');
-  wrap.className = 'controls';
+  wrap.className = 'controls-area';
+  const controls = document.createElement('div');
+  controls.className = 'controls';
   const hand = state.hands[state.active];
   const opts = getHandOptions(hand);
   const buttons = [
@@ -2911,8 +2949,38 @@ function buildPlayerControls() {
     el.innerHTML = `${b.label}<span class="key">${b.key.toUpperCase()}</span>`;
     if (!b.enabled) el.disabled = true;
     el.addEventListener('click', () => evaluateAndDoAction(b.action));
-    wrap.appendChild(el);
+    controls.appendChild(el);
   });
+  wrap.appendChild(controls);
+
+  // Disabled-action explanation tips
+  const tips = [];
+  if (isPair(hand.cards) && !opts.canSplit) {
+    if (state.bankroll < hand.bet) {
+      const need = hand.bet - state.bankroll;
+      tips.push(`Split needs $${need.toLocaleString()} more in bankroll.`);
+    } else if (state.hands.length >= 4) {
+      tips.push('Already at the 4-hand split limit.');
+    } else if (hand.fromSplitAces && !RULES.resplitAces) {
+      tips.push("House rule: aces don't re-split.");
+    }
+  }
+  if (hand.cards.length === 2 && !hand.doubled && !opts.canDouble && !hand.fromSplitAces) {
+    if (state.bankroll < hand.bet) {
+      const need = hand.bet - state.bankroll;
+      tips.push(`Double needs $${need.toLocaleString()} more in bankroll.`);
+    }
+  }
+  if (hand.fromSplitAces && !opts.canDouble) {
+    tips.push("Split aces can't double.");
+  }
+  if (tips.length > 0) {
+    const tip = document.createElement('div');
+    tip.className = 'controls-tip';
+    tip.innerHTML = tips.map(t => `<span class="tip-item">${t}</span>`).join('');
+    wrap.appendChild(tip);
+  }
+
   return wrap;
 }
 
