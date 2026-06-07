@@ -2,23 +2,39 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Blackjack Trainer — Play by the Book</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Cinzel:wght@500;700;900&display=swap" rel="stylesheet">
 <style>
   :root {
-    --felt: #0d3b24;
-    --felt-deep: #061d12;
-    --felt-light: #1a5234;
+    /* Felt (table surface) */
+    --felt: #0e4028;
+    --felt-deep: #051a10;
+    --felt-light: #1d5c39;
+
+    /* Burgundy (room chrome — walls, rails, leather) */
+    --burgundy: #3d1820;
+    --burgundy-deep: #1a080d;
+    --burgundy-light: #5a2530;
+    --oxblood: #2a0e14;
+
+    /* Gold (rails, ornament, type) */
     --gold: #c9a961;
-    --gold-bright: #e6c87a;
+    --gold-bright: #e8cc7a;
+    --gold-leaf: #d4b86a;
+    --gold-dark: #8a7340;
+
+    /* Neutrals */
     --cream: #f4ecd8;
     --ivory: #faf6ec;
+    --champagne: #e8dcc0;
+
+    /* Card / accent */
     --card-red: #b22222;
     --card-black: #1a1a1a;
-    --correct: #6eb869;
+    --correct: #7cc97a;
     --incorrect: #d05656;
     --neutral: #8b8b8b;
   }
@@ -33,11 +49,26 @@
   body {
     font-family: 'Manrope', sans-serif;
     background:
-      radial-gradient(ellipse at top, var(--felt-light) 0%, var(--felt) 40%, var(--felt-deep) 100%);
+      radial-gradient(ellipse 80% 60% at 50% 35%, var(--felt-light) 0%, var(--felt) 35%, var(--felt-deep) 70%, transparent 100%),
+      radial-gradient(ellipse at top, var(--burgundy-light) 0%, var(--burgundy) 30%, var(--burgundy-deep) 100%);
     color: var(--cream);
     min-height: 100vh;
-    padding: 24px 16px 80px;
+    padding: 24px max(16px, env(safe-area-inset-right)) max(40px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
     position: relative;
+  }
+
+  /* Velvet weave overlay — fine diagonal stripe at very low opacity */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.06;
+    background-image:
+      repeating-linear-gradient(45deg, transparent 0, transparent 2px, rgba(255,255,255,0.5) 2px, rgba(255,255,255,0.5) 3px),
+      repeating-linear-gradient(-45deg, transparent 0, transparent 2px, rgba(0,0,0,0.4) 2px, rgba(0,0,0,0.4) 3px);
+    mix-blend-mode: overlay;
   }
 
   /* Subtle noise texture overlay */
@@ -46,7 +77,7 @@
     position: fixed;
     inset: 0;
     pointer-events: none;
-    opacity: 0.04;
+    opacity: 0.05;
     background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence baseFrequency='0.9' /></filter><rect width='200' height='200' filter='url(%23n)' opacity='0.5'/></svg>");
     z-index: 0;
   }
@@ -62,84 +93,177 @@
   header {
     display: flex;
     justify-content: space-between;
-    align-items: flex-end;
-    padding-bottom: 16px;
-    border-bottom: 1px solid rgba(201, 169, 97, 0.25);
-    margin-bottom: 32px;
+    align-items: center;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--gold-dark);
+    margin-bottom: 28px;
     flex-wrap: wrap;
     gap: 16px;
+    position: relative;
+  }
+  /* Gold double-line under header */
+  header::after {
+    content: '';
+    position: absolute;
+    left: 0; right: 0; bottom: -4px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold-dark) 20%, var(--gold-dark) 80%, transparent);
+    opacity: 0.5;
   }
 
   .brand h1 {
-    font-family: 'Playfair Display', serif;
+    font-family: 'Cinzel', 'Playfair Display', serif;
     font-weight: 700;
-    font-size: 2.4rem;
-    letter-spacing: 0.5px;
+    font-size: 2.2rem;
+    letter-spacing: 0.18em;
     color: var(--gold-bright);
     line-height: 1;
+    text-transform: uppercase;
+    text-shadow:
+      0 1px 0 rgba(255, 220, 150, 0.15),
+      0 2px 4px rgba(0,0,0,0.6);
+  }
+
+  /* Art Deco rule under the brand: gold line with two diamonds */
+  .brand .ornament {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+    color: var(--gold);
+  }
+  .brand .ornament::before,
+  .brand .ornament::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold-dark) 30%, var(--gold) 100%);
+  }
+  .brand .ornament::after {
+    background: linear-gradient(90deg, var(--gold) 0%, var(--gold-dark) 70%, transparent);
+  }
+  .brand .ornament .diamond {
+    width: 5px;
+    height: 5px;
+    background: var(--gold);
+    transform: rotate(45deg);
+    box-shadow: 0 0 4px rgba(232, 204, 122, 0.6);
   }
 
   .brand p {
-    font-style: italic;
     font-family: 'Playfair Display', serif;
-    color: var(--cream);
-    opacity: 0.6;
-    margin-top: 4px;
-    font-size: 0.95rem;
+    font-style: italic;
+    color: var(--champagne);
+    opacity: 0.75;
+    margin-top: 6px;
+    font-size: 0.92rem;
+    letter-spacing: 0.05em;
   }
 
   .stats-bar {
     display: flex;
-    gap: 24px;
-    align-items: center;
+    gap: 0;
+    align-items: stretch;
     flex-wrap: wrap;
+    background: linear-gradient(180deg, var(--oxblood), var(--burgundy-deep));
+    border: 1px solid var(--gold-dark);
+    border-radius: 4px;
+    padding: 10px 4px;
+    box-shadow:
+      inset 0 1px 0 rgba(232, 204, 122, 0.15),
+      inset 0 -1px 0 rgba(0,0,0,0.5),
+      0 4px 12px rgba(0,0,0,0.5);
+    position: relative;
+  }
+
+  /* Inner gold rule on stats bar */
+  .stats-bar::before {
+    content: '';
+    position: absolute;
+    inset: 3px;
+    border: 1px solid rgba(201, 169, 97, 0.18);
+    border-radius: 2px;
+    pointer-events: none;
   }
 
   .stat {
-    text-align: right;
+    text-align: center;
+    padding: 0 16px;
+    border-right: 1px solid rgba(201, 169, 97, 0.18);
+    position: relative;
+    z-index: 1;
   }
+  .stat:last-child { border-right: none; }
 
   .stat-label {
-    font-size: 0.7rem;
+    font-family: 'Cinzel', serif;
+    font-size: 0.6rem;
     text-transform: uppercase;
-    letter-spacing: 1.5px;
-    opacity: 0.6;
-    margin-bottom: 2px;
+    letter-spacing: 2.5px;
+    color: var(--gold-dark);
+    margin-bottom: 4px;
+    font-weight: 500;
   }
 
   .stat-value {
     font-family: 'JetBrains Mono', monospace;
-    font-size: 1.3rem;
+    font-size: 1.25rem;
     font-weight: 500;
     color: var(--gold-bright);
+    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
   }
 
-  .stat-value.bankroll { color: var(--ivory); }
+  .stat-value.bankroll { color: var(--champagne); }
 
   /* Table */
   .table {
-    background: linear-gradient(180deg, rgba(13,59,36,0.6), rgba(6,29,18,0.4));
-    border: 1px solid rgba(201, 169, 97, 0.3);
-    border-radius: 8px;
-    padding: 32px 24px;
+    background: 
+      radial-gradient(ellipse 90% 80% at 50% 40%, var(--felt-light) 0%, var(--felt) 50%, var(--felt-deep) 100%);
+    border: 1px solid var(--gold-dark);
+    border-radius: 10px;
+    padding: 36px 28px;
     min-height: 420px;
     position: relative;
     box-shadow: 
-      inset 0 0 80px rgba(0,0,0,0.4),
-      0 8px 32px rgba(0,0,0,0.4);
+      inset 0 0 100px rgba(0,0,0,0.55),
+      inset 0 1px 0 rgba(232, 204, 122, 0.12),
+      0 12px 40px rgba(0,0,0,0.55),
+      0 0 0 6px var(--oxblood),
+      0 0 0 7px var(--gold-dark);
   }
 
+  /* Inner gold double-rail */
   .table::before {
     content: '';
     position: absolute;
-    inset: 8px;
-    border: 1px solid rgba(201, 169, 97, 0.15);
-    border-radius: 4px;
+    inset: 10px;
+    border: 1px solid rgba(201, 169, 97, 0.25);
+    border-radius: 5px;
     pointer-events: none;
+    box-shadow: inset 0 0 0 3px transparent, inset 0 0 0 4px rgba(201, 169, 97, 0.08);
+  }
+
+  /* Art Deco fan ornaments in table corners */
+  .table::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image:
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 60'><g fill='none' stroke='%23c9a961' stroke-width='1' opacity='0.55'><path d='M 0 60 Q 30 30 60 60'/><path d='M 8 60 Q 30 36 52 60'/><path d='M 16 60 Q 30 42 44 60'/><circle cx='30' cy='44' r='1.5' fill='%23c9a961'/></g></svg>"),
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 60'><g fill='none' stroke='%23c9a961' stroke-width='1' opacity='0.55' transform='rotate(90 30 30)'><path d='M 0 60 Q 30 30 60 60'/><path d='M 8 60 Q 30 36 52 60'/><path d='M 16 60 Q 30 42 44 60'/><circle cx='30' cy='44' r='1.5' fill='%23c9a961'/></g></svg>"),
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 60'><g fill='none' stroke='%23c9a961' stroke-width='1' opacity='0.55' transform='rotate(180 30 30)'><path d='M 0 60 Q 30 30 60 60'/><path d='M 8 60 Q 30 36 52 60'/><path d='M 16 60 Q 30 42 44 60'/><circle cx='30' cy='44' r='1.5' fill='%23c9a961'/></g></svg>"),
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 60'><g fill='none' stroke='%23c9a961' stroke-width='1' opacity='0.55' transform='rotate(-90 30 30)'><path d='M 0 60 Q 30 30 60 60'/><path d='M 8 60 Q 30 36 52 60'/><path d='M 16 60 Q 30 42 44 60'/><circle cx='30' cy='44' r='1.5' fill='%23c9a961'/></g></svg>");
+    background-position: bottom left, top left, top right, bottom right;
+    background-repeat: no-repeat;
+    background-size: 50px 50px;
+    border-radius: 10px;
   }
 
   .seat {
     margin-bottom: 32px;
+    position: relative;
+    z-index: 1;
   }
 
   .seat:last-child { margin-bottom: 0; }
@@ -147,23 +271,26 @@
   .seat-label {
     font-family: 'Playfair Display', serif;
     font-style: italic;
-    font-size: 1.1rem;
-    color: var(--gold);
-    margin-bottom: 12px;
+    font-size: 1.15rem;
+    color: var(--gold-bright);
+    margin-bottom: 14px;
     display: flex;
     align-items: center;
     gap: 12px;
+    letter-spacing: 0.02em;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.4);
   }
 
   .seat-label .total {
     font-family: 'JetBrains Mono', monospace;
     font-style: normal;
-    font-size: 0.9rem;
-    background: rgba(201, 169, 97, 0.15);
-    border: 1px solid rgba(201, 169, 97, 0.4);
-    padding: 2px 10px;
+    font-size: 0.85rem;
+    background: linear-gradient(180deg, var(--oxblood), var(--burgundy-deep));
+    border: 1px solid var(--gold-dark);
+    padding: 3px 12px;
     border-radius: 12px;
-    color: var(--cream);
+    color: var(--champagne);
+    box-shadow: inset 0 1px 0 rgba(232, 204, 122, 0.15), 0 2px 4px rgba(0,0,0,0.4);
   }
 
   .seat-label .total.bust { border-color: var(--incorrect); color: var(--incorrect); }
@@ -186,8 +313,10 @@
 
   .player-hand.active {
     border-color: var(--gold);
-    background: rgba(201, 169, 97, 0.05);
-    box-shadow: 0 0 24px rgba(201, 169, 97, 0.15);
+    background: linear-gradient(180deg, rgba(232, 204, 122, 0.06), rgba(201, 169, 97, 0.02));
+    box-shadow: 
+      0 0 30px rgba(232, 204, 122, 0.2),
+      inset 0 1px 0 rgba(232, 204, 122, 0.15);
   }
 
   .player-hand.finished { opacity: 0.55; }
@@ -228,9 +357,13 @@
   .card {
     width: 76px;
     height: 108px;
-    background: var(--ivory);
+    background: linear-gradient(135deg, var(--ivory) 0%, var(--cream) 100%);
     border-radius: 6px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.4), inset 0 0 0 1px rgba(0,0,0,0.05);
+    box-shadow: 
+      0 6px 14px rgba(0,0,0,0.5), 
+      0 2px 4px rgba(0,0,0,0.3),
+      inset 0 0 0 1px rgba(0,0,0,0.08),
+      inset 0 1px 0 rgba(255,255,255,0.8);
     position: relative;
     display: flex;
     flex-direction: column;
@@ -276,7 +409,8 @@
   }
 
   .card.face-down {
-    background: linear-gradient(135deg, #5a2a2a 0%, #3a1818 100%);
+    background: 
+      radial-gradient(ellipse at center, var(--burgundy-light) 0%, var(--burgundy) 60%, var(--oxblood) 100%);
     color: transparent;
     position: relative;
     overflow: hidden;
@@ -285,12 +419,14 @@
   .card.face-down::after {
     content: '';
     position: absolute;
-    inset: 6px;
-    border: 1px solid rgba(201, 169, 97, 0.5);
+    inset: 5px;
+    border: 1px solid rgba(201, 169, 97, 0.55);
     border-radius: 3px;
     background: 
-      repeating-linear-gradient(45deg, transparent 0 8px, rgba(201,169,97,0.08) 8px 9px),
-      repeating-linear-gradient(-45deg, transparent 0 8px, rgba(201,169,97,0.08) 8px 9px);
+      radial-gradient(circle at 50% 50%, rgba(201, 169, 97, 0.18) 0%, transparent 28%),
+      repeating-linear-gradient(45deg, transparent 0 7px, rgba(201,169,97,0.09) 7px 8px),
+      repeating-linear-gradient(-45deg, transparent 0 7px, rgba(201,169,97,0.09) 7px 8px);
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,0.4);
   }
 
   @keyframes dealIn {
@@ -307,14 +443,28 @@
   /* Coaching */
   .coach {
     margin: 24px 0;
-    padding: 16px 20px;
+    padding: 18px 22px;
     border-radius: 6px;
-    background: rgba(0,0,0,0.3);
+    background: linear-gradient(180deg, var(--oxblood), var(--burgundy-deep));
+    border: 1px solid var(--gold-dark);
     border-left: 3px solid var(--neutral);
     min-height: 64px;
     transition: all 0.4s ease;
     opacity: 0;
     transform: translateY(8px);
+    box-shadow:
+      inset 0 1px 0 rgba(232, 204, 122, 0.12),
+      0 4px 12px rgba(0,0,0,0.4);
+    position: relative;
+  }
+  /* Subtle inner gold rule */
+  .coach::before {
+    content: '';
+    position: absolute;
+    inset: 3px;
+    border: 1px solid rgba(201, 169, 97, 0.1);
+    border-radius: 3px;
+    pointer-events: none;
   }
 
   .coach.visible {
@@ -334,19 +484,25 @@
 
   .coach-head {
     font-family: 'Playfair Display', serif;
-    font-size: 1rem;
+    font-size: 1.05rem;
     font-weight: 600;
-    margin-bottom: 4px;
-    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+    letter-spacing: 0.02em;
+    color: var(--champagne);
+    position: relative;
+    z-index: 1;
   }
 
   .coach.correct .coach-head { color: var(--correct); }
   .coach.incorrect .coach-head { color: var(--incorrect); }
 
   .coach-body {
-    font-size: 0.9rem;
-    line-height: 1.5;
+    font-size: 0.92rem;
+    line-height: 1.55;
     opacity: 0.92;
+    color: var(--cream);
+    position: relative;
+    z-index: 1;
   }
 
   .coach-body strong {
@@ -365,27 +521,35 @@
   }
 
   .btn {
-    font-family: 'Manrope', sans-serif;
-    font-weight: 600;
-    font-size: 0.9rem;
+    font-family: 'Cinzel', 'Manrope', sans-serif;
+    font-weight: 500;
+    font-size: 0.82rem;
     text-transform: uppercase;
-    letter-spacing: 1.5px;
-    background: linear-gradient(180deg, #2a2a2a, #1a1a1a);
-    color: var(--cream);
-    border: 1px solid rgba(201, 169, 97, 0.4);
-    padding: 12px 22px;
+    letter-spacing: 2px;
+    background: linear-gradient(180deg, var(--oxblood) 0%, var(--burgundy-deep) 100%);
+    color: var(--champagne);
+    border: 1px solid var(--gold-dark);
+    padding: 13px 22px;
     border-radius: 4px;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition: all 0.18s ease;
     position: relative;
     min-width: 100px;
+    box-shadow:
+      inset 0 1px 0 rgba(232, 204, 122, 0.18),
+      inset 0 -1px 0 rgba(0,0,0,0.4),
+      0 2px 6px rgba(0,0,0,0.4);
   }
 
   .btn:hover:not(:disabled) {
-    background: linear-gradient(180deg, #3a3a3a, #252525);
+    background: linear-gradient(180deg, var(--burgundy-light) 0%, var(--burgundy) 100%);
     border-color: var(--gold);
+    color: var(--gold-bright);
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(201, 169, 97, 0.2);
+    box-shadow:
+      inset 0 1px 0 rgba(232, 204, 122, 0.25),
+      0 4px 14px rgba(201, 169, 97, 0.25),
+      0 0 0 1px rgba(201, 169, 97, 0.15);
   }
 
   .btn:disabled {
@@ -394,14 +558,22 @@
   }
 
   .btn.primary {
-    background: linear-gradient(180deg, var(--gold-bright), var(--gold));
-    color: #1a1a1a;
+    background: linear-gradient(180deg, var(--gold-bright) 0%, var(--gold) 50%, var(--gold-dark) 100%);
+    color: var(--oxblood);
     border-color: var(--gold-bright);
+    text-shadow: 0 1px 0 rgba(255,255,255,0.3);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 240, 200, 0.5),
+      inset 0 -1px 0 rgba(0,0,0,0.2),
+      0 3px 10px rgba(201, 169, 97, 0.4);
   }
 
   .btn.primary:hover:not(:disabled) {
-    background: linear-gradient(180deg, #f0d68c, var(--gold-bright));
-    box-shadow: 0 4px 16px rgba(230, 200, 122, 0.4);
+    background: linear-gradient(180deg, #f4dc94 0%, var(--gold-bright) 50%, var(--gold) 100%);
+    color: var(--burgundy-deep);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 240, 200, 0.6),
+      0 5px 20px rgba(232, 204, 122, 0.5);
   }
 
   .btn .key {
@@ -409,7 +581,7 @@
     margin-left: 8px;
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.7rem;
-    opacity: 0.6;
+    opacity: 0.65;
     border: 1px solid currentColor;
     padding: 1px 5px;
     border-radius: 3px;
@@ -418,24 +590,41 @@
 
   /* Betting */
   .betting-area {
-    margin-top: 24px;
-    padding: 24px;
-    background: rgba(0,0,0,0.2);
+    margin-top: 28px;
+    padding: 26px 24px;
+    background: linear-gradient(180deg, var(--oxblood), var(--burgundy-deep));
     border-radius: 6px;
-    border: 1px solid rgba(201, 169, 97, 0.2);
+    border: 1px solid var(--gold-dark);
+    box-shadow:
+      inset 0 1px 0 rgba(232, 204, 122, 0.15),
+      inset 0 0 60px rgba(0,0,0,0.3),
+      0 6px 20px rgba(0,0,0,0.4);
+    position: relative;
+  }
+  .betting-area::before {
+    content: '';
+    position: absolute;
+    inset: 4px;
+    border: 1px solid rgba(201, 169, 97, 0.15);
+    border-radius: 3px;
+    pointer-events: none;
   }
 
   .bet-display {
     text-align: center;
-    margin-bottom: 16px;
+    margin-bottom: 18px;
+    position: relative;
+    z-index: 1;
   }
 
   .bet-label {
-    font-size: 0.75rem;
+    font-family: 'Cinzel', serif;
+    font-size: 0.7rem;
     text-transform: uppercase;
-    letter-spacing: 2px;
-    opacity: 0.6;
-    margin-bottom: 4px;
+    letter-spacing: 3px;
+    color: var(--gold-dark);
+    margin-bottom: 6px;
+    font-weight: 500;
   }
 
   .bet-amount {
@@ -444,6 +633,9 @@
     font-weight: 700;
     color: var(--gold-bright);
     line-height: 1;
+    text-shadow:
+      0 1px 0 rgba(255, 220, 150, 0.2),
+      0 3px 8px rgba(0,0,0,0.5);
   }
 
   .chips {
@@ -451,14 +643,16 @@
     gap: 12px;
     justify-content: center;
     flex-wrap: wrap;
-    margin-bottom: 16px;
+    margin-bottom: 18px;
+    position: relative;
+    z-index: 1;
   }
 
   .chip {
-    width: 56px;
-    height: 56px;
+    width: 58px;
+    height: 58px;
     border-radius: 50%;
-    border: 3px dashed rgba(255,255,255,0.6);
+    border: 3px dashed rgba(255,255,255,0.65);
     background-clip: padding-box;
     display: flex;
     align-items: center;
@@ -468,15 +662,23 @@
     font-size: 0.85rem;
     cursor: pointer;
     transition: all 0.15s ease;
-    box-shadow: 0 4px 0 rgba(0,0,0,0.3), 0 6px 12px rgba(0,0,0,0.4);
+    box-shadow: 
+      0 4px 0 rgba(0,0,0,0.35), 
+      0 6px 14px rgba(0,0,0,0.5),
+      inset 0 1px 0 rgba(255,255,255,0.25),
+      inset 0 -2px 4px rgba(0,0,0,0.3);
     color: white;
-    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+    text-shadow: 0 1px 2px rgba(0,0,0,0.6);
     user-select: none;
   }
 
   .chip:hover:not(:disabled) {
     transform: translateY(-3px);
-    box-shadow: 0 6px 0 rgba(0,0,0,0.3), 0 10px 18px rgba(0,0,0,0.5);
+    box-shadow: 
+      0 6px 0 rgba(0,0,0,0.35), 
+      0 10px 20px rgba(0,0,0,0.55),
+      inset 0 1px 0 rgba(255,255,255,0.3),
+      inset 0 -2px 4px rgba(0,0,0,0.3);
   }
 
   .chip:disabled {
@@ -484,17 +686,19 @@
     cursor: not-allowed;
   }
 
-  .chip-5 { background: #c0392b; }
-  .chip-25 { background: #27ae60; }
-  .chip-100 { background: #2c3e50; border-color: rgba(255,255,255,0.4); }
-  .chip-500 { background: #6c3483; }
-  .chip-1000 { background: linear-gradient(135deg, #d4af37, #8b6914); }
+  .chip-5 { background: radial-gradient(circle at 30% 30%, #d94a3a, #a52f24); }
+  .chip-25 { background: radial-gradient(circle at 30% 30%, #2dc26d, #1e8a4d); }
+  .chip-100 { background: radial-gradient(circle at 30% 30%, #3e556e, #1c2838); border-color: rgba(255,255,255,0.45); }
+  .chip-500 { background: radial-gradient(circle at 30% 30%, #844098, #4d2562); }
+  .chip-1000 { background: radial-gradient(circle at 30% 30%, #e8c46a, #7d5e0a); }
 
   .bet-actions {
     display: flex;
     gap: 10px;
     justify-content: center;
     flex-wrap: wrap;
+    position: relative;
+    z-index: 1;
   }
 
   /* Round end */
@@ -505,92 +709,150 @@
 
   .round-end-msg {
     font-family: 'Playfair Display', serif;
-    font-size: 1.5rem;
+    font-size: 1.6rem;
     font-style: italic;
-    margin-bottom: 16px;
+    margin-bottom: 18px;
+    letter-spacing: 0.01em;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
   }
 
   .round-end-msg.win { color: var(--correct); }
   .round-end-msg.loss { color: var(--incorrect); }
-  .round-end-msg.push { color: var(--neutral); }
+  .round-end-msg.push { color: var(--gold-bright); }
 
   /* Strategy chart modal */
   .modal-bg {
     position: fixed;
     inset: 0;
-    background: rgba(0,0,0,0.85);
+    background: rgba(10, 4, 7, 0.88);
     z-index: 100;
     display: none;
     align-items: center;
     justify-content: center;
     padding: 20px;
     overflow-y: auto;
+    backdrop-filter: blur(3px);
   }
 
   .modal-bg.open { display: flex; }
 
   .modal {
-    background: var(--felt-deep);
+    background: 
+      linear-gradient(180deg, var(--burgundy) 0%, var(--burgundy-deep) 100%);
     border: 1px solid var(--gold);
     border-radius: 8px;
-    padding: 24px;
+    padding: 28px;
     max-width: 900px;
     width: 100%;
     max-height: 90vh;
     overflow-y: auto;
     position: relative;
+    box-shadow:
+      0 20px 60px rgba(0,0,0,0.7),
+      inset 0 1px 0 rgba(232, 204, 122, 0.2);
+  }
+  /* Inner gold double-rule */
+  .modal::before {
+    content: '';
+    position: absolute;
+    inset: 6px;
+    border: 1px solid rgba(201, 169, 97, 0.25);
+    border-radius: 5px;
+    pointer-events: none;
   }
 
   .modal h2 {
-    font-family: 'Playfair Display', serif;
+    font-family: 'Cinzel', 'Playfair Display', serif;
     color: var(--gold-bright);
-    margin-bottom: 16px;
-    font-size: 1.5rem;
+    margin-bottom: 18px;
+    font-size: 1.4rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    position: relative;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+  }
+  /* Gold rule under modal h2 */
+  .modal h2::after {
+    content: '';
+    display: block;
+    margin-top: 8px;
+    height: 1px;
+    background: linear-gradient(90deg, var(--gold) 0%, var(--gold-dark) 50%, transparent 100%);
   }
 
   .modal .close {
     position: absolute;
-    top: 16px;
-    right: 16px;
-    background: none;
-    border: 1px solid var(--gold);
-    color: var(--cream);
+    top: 14px;
+    right: 14px;
+    background: linear-gradient(180deg, var(--oxblood), var(--burgundy-deep));
+    border: 1px solid var(--gold-dark);
+    color: var(--gold-bright);
     width: 32px;
     height: 32px;
     border-radius: 50%;
     cursor: pointer;
     font-size: 1.2rem;
     line-height: 1;
+    z-index: 2;
+    box-shadow: inset 0 1px 0 rgba(232, 204, 122, 0.2), 0 2px 4px rgba(0,0,0,0.4);
+    transition: all 0.15s ease;
+  }
+  .modal .close:hover {
+    border-color: var(--gold);
+    color: var(--ivory);
+  }
+
+  /* Confirm modal (reset stats) */
+  .confirm-modal { max-width: 420px; }
+  .confirm-body {
+    color: var(--cream);
+    font-size: 0.95rem;
+    line-height: 1.5;
+    margin-bottom: 20px;
+    opacity: 0.9;
+  }
+  .confirm-body strong {
+    color: var(--gold-bright);
+    font-weight: 600;
+  }
+  .confirm-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
   }
 
   /* Hand recap modal */
   .recap-modal { max-width: 640px; }
   .recap-summary {
     display: flex;
-    gap: 24px;
+    gap: 28px;
     flex-wrap: wrap;
-    padding: 14px 16px;
-    background: rgba(255,255,255,0.04);
-    border: 1px solid rgba(201,169,97,0.2);
-    border-radius: 6px;
-    margin-bottom: 16px;
+    padding: 16px 20px;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid rgba(201,169,97,0.25);
+    border-radius: 4px;
+    margin-bottom: 18px;
   }
   .recap-summary .stat {
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 3px;
+    padding: 0;
+    border: none;
   }
   .recap-summary .stat .label {
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--neutral);
-    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: 0.18em;
+    color: var(--gold-dark);
+    font-family: 'Cinzel', serif;
+    font-weight: 500;
   }
   .recap-summary .stat .value {
     font-family: 'Playfair Display', serif;
-    font-size: 1.25rem;
-    color: var(--cream);
+    font-size: 1.3rem;
+    color: var(--champagne);
   }
   .recap-summary .stat .value.gain { color: var(--correct); }
   .recap-summary .stat .value.loss { color: var(--incorrect); }
@@ -601,10 +863,10 @@
     align-items: center;
     gap: 14px;
     padding: 12px 14px;
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 6px;
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 4px;
     margin-bottom: 8px;
-    background: rgba(0,0,0,0.18);
+    background: rgba(0,0,0,0.25);
   }
   .recap-decision.correct { border-left: 3px solid var(--correct); }
   .recap-decision.incorrect { border-left: 3px solid var(--incorrect); }
@@ -748,14 +1010,15 @@
 
   /* New dealer-first chart */
   .chart-prompt {
-    font-family: 'JetBrains Mono', monospace;
+    font-family: 'Cinzel', serif;
     font-size: 0.7rem;
     text-transform: uppercase;
-    letter-spacing: 0.12em;
-    color: var(--neutral);
+    letter-spacing: 0.18em;
+    color: var(--gold-dark);
     margin: 14px 0 8px;
+    font-weight: 500;
   }
-  .chart-prompt-sub { margin-top: 22px; }
+  .chart-prompt-sub { margin-top: 24px; }
 
   .dealer-pills {
     display: grid;
@@ -763,43 +1026,53 @@
     gap: 6px;
   }
   .dealer-pill {
-    background: var(--ivory);
+    background: linear-gradient(180deg, var(--ivory), var(--cream));
     color: var(--card-black);
     border: 2px solid transparent;
     border-radius: 6px;
     padding: 10px 0;
     font-family: 'Playfair Display', serif;
-    font-size: 1.25rem;
+    font-size: 1.3rem;
     font-weight: 700;
     cursor: pointer;
     transition: all 0.15s ease;
     text-align: center;
     line-height: 1;
+    box-shadow:
+      0 3px 8px rgba(0,0,0,0.3),
+      inset 0 1px 0 rgba(255,255,255,0.7);
   }
   .dealer-pill:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    box-shadow: 0 5px 12px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.8);
   }
   .dealer-pill.selected {
     border-color: var(--gold-bright);
-    box-shadow: 0 0 0 3px rgba(230, 200, 122, 0.3);
+    box-shadow: 
+      0 0 0 3px rgba(232, 200, 122, 0.35), 
+      0 5px 14px rgba(232, 200, 122, 0.3),
+      inset 0 1px 0 rgba(255,255,255,0.8);
     transform: translateY(-2px);
   }
   .dealer-pill.red { color: var(--card-red); }
 
   .play-section {
-    margin-bottom: 18px;
+    margin-bottom: 22px;
   }
   .play-section-title {
-    font-family: 'Playfair Display', serif;
-    font-style: italic;
-    color: var(--gold);
-    font-size: 1rem;
-    margin: 0 0 6px;
+    font-family: 'Cinzel', serif;
+    color: var(--gold-bright);
+    font-size: 0.95rem;
+    margin: 0 0 10px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding-bottom: 6px;
+    border-bottom: 1px solid rgba(201, 169, 97, 0.25);
   }
   .play-section-sub {
     font-size: 0.72rem;
-    color: var(--neutral);
+    color: var(--gold-dark);
     font-family: 'JetBrains Mono', monospace;
     margin-bottom: 8px;
   }
@@ -808,85 +1081,546 @@
     grid-template-columns: 110px 1fr;
     align-items: center;
     gap: 12px;
-    padding: 8px 12px;
+    padding: 9px 14px;
     border-radius: 4px;
     margin-bottom: 4px;
-    background: rgba(255,255,255,0.025);
+    background: rgba(0,0,0,0.22);
     border-left: 3px solid transparent;
   }
   .play-row .hand {
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.95rem;
-    color: var(--cream);
+    color: var(--champagne);
     font-weight: 600;
   }
   .play-row .action {
     font-family: 'Playfair Display', serif;
-    font-size: 1rem;
+    font-size: 1.05rem;
     font-weight: 600;
+    font-style: italic;
   }
   .play-row .action .qualifier {
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.72rem;
-    color: var(--neutral);
+    color: var(--gold-dark);
     font-weight: 400;
     margin-left: 6px;
     font-style: normal;
   }
-  .play-row.act-h { border-left-color: #4a7c59; }
-  .play-row.act-h .action { color: #8fc99c; }
+  .play-row.act-h { border-left-color: #5a8c66; }
+  .play-row.act-h .action { color: #a0d4ab; }
   .play-row.act-s { border-left-color: #c0392b; }
   .play-row.act-s .action { color: #e88a7e; }
-  .play-row.act-d, .play-row.act-ds { border-left-color: #d4ac0d; }
-  .play-row.act-d .action, .play-row.act-ds .action { color: #f0d76b; }
-  .play-row.act-p { border-left-color: #2980b9; }
-  .play-row.act-p .action { color: #6cb3e0; }
+  .play-row.act-d, .play-row.act-ds { border-left-color: var(--gold); }
+  .play-row.act-d .action, .play-row.act-ds .action { color: var(--gold-bright); }
+  .play-row.act-p { border-left-color: #4a90c2; }
+  .play-row.act-p .action { color: #82c0e8; }
   .play-row.act-rh, .play-row.act-rs { border-left-color: #9aa3a4; }
   .play-row.act-rh .action, .play-row.act-rs .action { color: #c1c8c9; }
 
-  @media (max-width: 600px) {
-    .dealer-pills { grid-template-columns: repeat(5, 1fr); }
-    .dealer-pill { font-size: 1.05rem; padding: 8px 0; }
-    .play-row { grid-template-columns: 90px 1fr; gap: 8px; padding: 7px 10px; }
+  /* ============================================================
+     Achievement toast notifications (top-right)
+     ============================================================ */
+  .toast-host {
+    position: fixed;
+    top: max(16px, env(safe-area-inset-top));
+    right: max(16px, env(safe-area-inset-right));
+    z-index: 200;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    pointer-events: none;
+  }
+
+  .toast {
+    pointer-events: auto;
+    cursor: pointer;
+    min-width: 280px;
+    max-width: 340px;
+    padding: 14px 18px 14px 16px;
+    background: linear-gradient(180deg, var(--burgundy) 0%, var(--burgundy-deep) 100%);
+    border: 1px solid var(--gold-dark);
+    border-left: 4px solid var(--gold);
+    border-radius: 6px;
+    box-shadow:
+      inset 0 1px 0 rgba(232, 204, 122, 0.2),
+      0 12px 32px rgba(0,0,0,0.6);
+    transform: translateX(420px);
+    opacity: 0;
+    transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
+  }
+  .toast.show { transform: translateX(0); opacity: 1; }
+  .toast.hide { transform: translateX(60px); opacity: 0; }
+
+  .toast-tier {
+    font-family: 'Cinzel', serif;
+    font-size: 0.62rem;
+    text-transform: uppercase;
+    letter-spacing: 2.5px;
+    color: var(--gold-dark);
+    margin-bottom: 4px;
+  }
+  .toast-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--gold-bright);
+    margin-bottom: 4px;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+  }
+  .toast-desc {
+    font-size: 0.82rem;
+    color: var(--champagne);
+    opacity: 0.85;
+    line-height: 1.4;
+  }
+
+  .toast-bronze { border-left-color: #b06b3a; }
+  .toast-bronze .toast-tier { color: #b06b3a; }
+  .toast-bronze .toast-name { color: #e0a37a; }
+
+  .toast-silver { border-left-color: #b8c0c8; }
+  .toast-silver .toast-tier { color: #aab2ba; }
+  .toast-silver .toast-name { color: #e6ebef; }
+
+  .toast-gold { border-left-color: var(--gold-bright); }
+  .toast-gold .toast-tier { color: var(--gold); }
+  .toast-gold .toast-name { color: var(--gold-bright); }
+
+  .toast-platinum {
+    border-left-color: #e0e6ed;
+    background: linear-gradient(135deg, var(--burgundy) 0%, #2a1428 50%, var(--burgundy-deep) 100%);
+  }
+  .toast-platinum .toast-name {
+    color: #f0e2b8;
+    text-shadow: 0 0 8px rgba(240, 226, 184, 0.5);
+  }
+
+  /* ============================================================
+     Achievements showcase modal
+     ============================================================ */
+  .achievements-modal { max-width: 760px; }
+
+  .ach-summary {
+    display: flex;
+    gap: 32px;
+    flex-wrap: wrap;
+    padding: 14px 20px;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid rgba(201, 169, 97, 0.25);
+    border-radius: 4px;
+    margin-bottom: 20px;
+  }
+  .ach-stat { display: flex; flex-direction: column; }
+  .ach-stat .num {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.5rem;
+    color: var(--gold-bright);
+    line-height: 1;
+  }
+  .ach-stat .lbl {
+    font-family: 'Cinzel', serif;
+    font-size: 0.62rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--gold-dark);
+    margin-top: 4px;
+  }
+
+  .ach-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .ach-card {
+    background: linear-gradient(180deg, rgba(0,0,0,0.4), rgba(0,0,0,0.15));
+    border: 1px solid rgba(201, 169, 97, 0.18);
+    border-radius: 6px;
+    padding: 14px 16px;
+    position: relative;
+    display: grid;
+    grid-template-columns: 40px 1fr;
+    grid-template-rows: auto auto auto auto;
+    column-gap: 14px;
+    row-gap: 4px;
+    transition: all 0.2s ease;
+  }
+
+  .ach-medal {
+    grid-row: 1 / span 3;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    background: linear-gradient(135deg, rgba(0,0,0,0.4), rgba(0,0,0,0.2));
+    border: 1px solid rgba(201, 169, 97, 0.2);
+    align-self: start;
+    margin-top: 2px;
+    transition: all 0.2s ease;
+  }
+  .ach-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--champagne);
+    line-height: 1.2;
+  }
+  .ach-desc {
+    font-size: 0.82rem;
+    color: var(--cream);
+    opacity: 0.7;
+    line-height: 1.4;
+  }
+  .ach-progress {
+    grid-column: 2;
+    margin-top: 6px;
+  }
+  .ach-progress-bar {
+    height: 4px;
+    background: rgba(0,0,0,0.5);
+    border-radius: 2px;
+    overflow: hidden;
+    border: 1px solid rgba(201, 169, 97, 0.15);
+  }
+  .ach-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--gold-dark), var(--gold));
+    transition: width 0.4s ease;
+  }
+  .ach-progress-text {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--gold-dark);
+    margin-top: 4px;
+  }
+  .ach-earned-date {
+    grid-column: 2;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--gold-dark);
+    margin-top: 4px;
+    font-style: italic;
+  }
+
+  /* Locked vs earned */
+  .ach-card.locked .ach-medal { color: var(--neutral); opacity: 0.4; }
+  .ach-card.locked .ach-name { color: var(--neutral); }
+  .ach-card.locked .ach-desc { opacity: 0.5; }
+  .ach-card.locked.hidden-card .ach-medal { font-size: 1.4rem; color: var(--gold-dark); opacity: 0.6; }
+
+  .ach-card.earned {
+    background: linear-gradient(180deg, var(--oxblood), var(--burgundy-deep));
+    border-color: var(--gold-dark);
+  }
+
+  /* Tier-specific medal colors when earned */
+  .ach-card.earned.tier-bronze .ach-medal {
+    color: #e0a37a;
+    background: linear-gradient(135deg, #6a3b1f, #3a1d0c);
+    border-color: #b06b3a;
+    box-shadow: inset 0 1px 0 rgba(255,180,120,0.3);
+  }
+  .ach-card.earned.tier-silver .ach-medal {
+    color: #f0f4f8;
+    background: linear-gradient(135deg, #5a6470, #2a3038);
+    border-color: #b8c0c8;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.3);
+  }
+  .ach-card.earned.tier-gold .ach-medal {
+    color: var(--burgundy-deep);
+    background: linear-gradient(135deg, var(--gold-bright), var(--gold-dark));
+    border-color: var(--gold-bright);
+    box-shadow: inset 0 1px 0 rgba(255,240,200,0.5);
+  }
+  .ach-card.earned.tier-platinum .ach-medal {
+    color: var(--burgundy-deep);
+    background: linear-gradient(135deg, #f0e2b8, #c0d4e0, #f0e2b8);
+    border-color: #e0e6ed;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.5), 0 0 12px rgba(232, 220, 192, 0.4);
+    animation: platinum-shimmer 3s ease-in-out infinite;
+  }
+  @keyframes platinum-shimmer {
+    0%, 100% { box-shadow: inset 0 1px 0 rgba(255,255,255,0.5), 0 0 8px rgba(232, 220, 192, 0.2); }
+    50% { box-shadow: inset 0 1px 0 rgba(255,255,255,0.7), 0 0 16px rgba(232, 220, 192, 0.5); }
+  }
+
+  /* Streak indicator in stats */
+  .streak-best {
+    font-family: 'Cinzel', serif;
+    font-size: 0.55rem;
+    color: var(--gold-dark);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-left: 4px;
+  }
+  .streak-hot {
+    color: var(--gold-bright);
+    text-shadow: 0 0 8px rgba(232, 204, 122, 0.6);
+  }
+
+  /* Achievement count in footer */
+  .ach-count {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75em;
+    color: var(--gold-dark);
+    margin-left: 2px;
   }
 
   /* Footer note */
   .footnote {
     text-align: center;
-    margin-top: 24px;
-    font-size: 0.8rem;
-    opacity: 0.5;
+    margin-top: 28px;
+    font-size: 0.78rem;
+    color: var(--gold-dark);
+    font-family: 'Playfair Display', serif;
     font-style: italic;
+    letter-spacing: 0.02em;
+    line-height: 1.7;
+  }
+  .footnote .sep {
+    display: inline-block;
+    margin: 0 10px;
+    color: var(--gold);
+    transform: rotate(45deg);
+    font-size: 0.55rem;
+    vertical-align: middle;
+    opacity: 0.7;
   }
 
-  .footnote a {
+  .footnote a, .footnote .link-btn {
     color: var(--gold);
     cursor: pointer;
     text-decoration: underline;
     text-underline-offset: 2px;
   }
 
+  .footnote .link-btn {
+    background: none;
+    border: none;
+    padding: 6px 4px;
+    font-family: inherit;
+    font-size: inherit;
+    font-style: inherit;
+    line-height: inherit;
+    margin: 0;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  .footnote .link-btn:hover { color: var(--gold-bright); }
+  .footnote .link-btn:active { opacity: 0.7; }
+
   .center-msg {
     text-align: center;
     padding: 60px 20px;
-    color: var(--cream);
-    opacity: 0.7;
+    color: var(--champagne);
+    opacity: 0.75;
     font-style: italic;
     font-family: 'Playfair Display', serif;
-    font-size: 1.1rem;
+    font-size: 1.15rem;
+    letter-spacing: 0.02em;
+    position: relative;
+    z-index: 1;
   }
 
+  /* ============================================================
+     TOUCH & MOBILE OPTIMIZATIONS
+     ============================================================ */
+
+  /* Remove tap delay & gray flash on iOS for all interactive elements */
+  .btn, .chip, .dealer-pill, .legend-swatch, .modal .close,
+  .recap-decision, .footnote .link-btn, .play-row {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* On touch devices (no hover), kill sticky-hover effects */
+  @media (hover: none) {
+    .btn:hover:not(:disabled) {
+      background: linear-gradient(180deg, var(--oxblood) 0%, var(--burgundy-deep) 100%);
+      border-color: var(--gold-dark);
+      color: var(--champagne);
+      transform: none;
+      box-shadow:
+        inset 0 1px 0 rgba(232, 204, 122, 0.18),
+        inset 0 -1px 0 rgba(0,0,0,0.4),
+        0 2px 6px rgba(0,0,0,0.4);
+    }
+    .btn.primary:hover:not(:disabled) {
+      background: linear-gradient(180deg, var(--gold-bright) 0%, var(--gold) 50%, var(--gold-dark) 100%);
+      color: var(--oxblood);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 240, 200, 0.5),
+        inset 0 -1px 0 rgba(0,0,0,0.2),
+        0 3px 10px rgba(201, 169, 97, 0.4);
+    }
+    .chip:hover:not(:disabled) {
+      transform: none;
+      box-shadow: 0 4px 0 rgba(0,0,0,0.3), 0 6px 12px rgba(0,0,0,0.4);
+    }
+    .dealer-pill:hover {
+      transform: none;
+      box-shadow: none;
+    }
+  }
+
+  /* Tactile press states for taps */
+  .btn:active:not(:disabled) {
+    transform: translateY(1px);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  }
+  .chip:active:not(:disabled) {
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 rgba(0,0,0,0.3), 0 3px 6px rgba(0,0,0,0.4);
+  }
+  .dealer-pill:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  }
+
+  /* Phone breakpoint */
   @media (max-width: 600px) {
-    .brand h1 { font-size: 1.8rem; }
-    .stats-bar { gap: 12px; }
-    .stat-value { font-size: 1rem; }
+    body { padding-top: 14px; }
+    .app { gap: 0; }
+
+    /* Header — stack brand above stats, redistribute stats evenly */
+    header {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 14px;
+      margin-bottom: 20px;
+      padding-bottom: 14px;
+    }
+    .brand { text-align: center; }
+    .brand h1 { font-size: 1.75rem; }
+    .brand p { font-size: 0.85rem; margin-top: 2px; }
+
+    .stats-bar {
+      justify-content: space-around;
+      padding: 10px 0;
+    }
+    .stat { padding: 0 6px; flex: 1; text-align: center; }
+    .stat-label { font-size: 0.58rem; letter-spacing: 1.5px; }
+    .stat-value { font-size: 1.05rem; }
+
+    /* Table — tighter padding so cards have more room */
+    .table { padding: 18px 12px; min-height: 320px; }
+    .table::before { inset: 6px; }
+    .seat { margin-bottom: 22px; }
+    .seat-label { font-size: 0.95rem; margin-bottom: 8px; gap: 8px; }
+    .seat-label .total { font-size: 0.8rem; padding: 2px 8px; }
+
+    /* Cards — slightly smaller, less gap so 4 cards fit comfortably */
+    .cards { gap: 5px; min-height: 92px; }
     .card { width: 60px; height: 86px; padding: 4px 6px; }
     .card .rank { font-size: 1rem; }
+    .card .suit-small { font-size: 0.8rem; }
     .card .suit-big { font-size: 1.6rem; }
-    .table { padding: 20px 12px; }
-    .btn { padding: 10px 14px; font-size: 0.8rem; min-width: 80px; }
-    .bet-amount { font-size: 1.8rem; }
-    .chip { width: 48px; height: 48px; font-size: 0.75rem; }
+
+    /* Split hands stack vertically — full width each */
+    .hands-row { flex-direction: column; gap: 14px; }
+    .player-hand { min-width: 0; padding: 8px; }
+    .hand-meta { font-size: 0.78rem; margin-top: 6px; }
+
+    /* Coach panel tighter */
+    .coach { padding: 12px 14px; margin: 16px 0; min-height: 56px; }
+    .coach-head { font-size: 0.95rem; }
+    .coach-body { font-size: 0.85rem; line-height: 1.45; }
+
+    /* Hide keyboard hints on mobile (no keyboard) */
+    .btn .key { display: none; }
+
+    /* Action controls — distribute evenly across width */
+    .controls { gap: 6px; margin-top: 18px; }
+    .controls .btn { flex: 1; min-width: 0; padding: 14px 6px; font-size: 0.78rem; letter-spacing: 1px; }
+
+    /* Betting area */
+    .betting-area { margin-top: 18px; padding: 16px 14px; }
+    .bet-display { margin-bottom: 12px; }
+    .bet-amount { font-size: 1.9rem; }
+    .bet-label { font-size: 0.7rem; }
+
+    /* Chips — compact spacing, larger tap target */
+    .chips { gap: 8px; margin-bottom: 14px; }
+    .chip { width: 50px; height: 50px; font-size: 0.78rem; border-width: 2px; }
+
+    /* Bet actions — distribute evenly */
+    .bet-actions { gap: 6px; }
+    .bet-actions .btn { flex: 1; min-width: 0; padding: 11px 6px; font-size: 0.78rem; }
+
+    /* Modals — use more screen, smaller padding */
+    .modal-bg { padding: 8px; }
+    .modal { padding: 18px 14px; max-height: 92vh; }
+    .modal h2 { font-size: 1.2rem; margin-bottom: 12px; padding-right: 36px; line-height: 1.25; }
+    .modal .close { top: 12px; right: 12px; width: 30px; height: 30px; }
+
+    /* Strategy chart — chart-prompt + dealer pills + play rows */
+    .chart-prompt { margin: 10px 0 6px; font-size: 0.65rem; }
+    .chart-prompt-sub { margin-top: 16px; }
+    .dealer-pills { grid-template-columns: repeat(5, 1fr); gap: 5px; }
+    .dealer-pill { font-size: 1.1rem; padding: 9px 0; }
+    .play-section-title { font-size: 0.95rem; }
+    .play-row { grid-template-columns: 80px 1fr; gap: 8px; padding: 8px 10px; }
+    .play-row .hand { font-size: 0.85rem; }
+    .play-row .action { font-size: 0.95rem; }
+    .play-row .action .qualifier { display: block; margin-left: 0; margin-top: 2px; font-size: 0.68rem; }
+
+    /* Recap modal — make decision rows more compact and readable */
+    .recap-summary { padding: 12px 14px; gap: 18px; }
+    .recap-summary .stat .value { font-size: 1.1rem; }
+    .recap-decision { padding: 10px 12px; }
+    .recap-mini-card { width: 22px; height: 30px; font-size: 0.7rem; }
+    .recap-text { font-size: 0.82rem; }
+    .recap-text .reason { font-size: 0.75rem; }
+
+    /* Round end / center messages */
+    .round-end-msg { font-size: 1.2rem; }
+    .center-msg { padding: 40px 16px; font-size: 0.95rem; }
+
+    /* Footer note */
+    .footnote { font-size: 0.78rem; margin-top: 20px; line-height: 1.6; }
+    .footnote .link-btn { padding: 10px 8px; font-size: 0.82rem; }
+
+    /* Toasts */
+    .toast-host { top: max(10px, env(safe-area-inset-top)); right: 8px; left: 8px; }
+    .toast { min-width: 0; max-width: 100%; padding: 12px 14px; }
+    .toast-name { font-size: 1.05rem; }
+    .toast-desc { font-size: 0.78rem; }
+
+    /* Achievements modal — single column on mobile */
+    .ach-grid { grid-template-columns: 1fr; gap: 8px; }
+    .ach-card { padding: 12px 14px; column-gap: 12px; }
+    .ach-medal { width: 36px; height: 36px; font-size: 1rem; }
+    .ach-name { font-size: 0.95rem; }
+    .ach-desc { font-size: 0.78rem; }
+    .ach-summary { padding: 12px 14px; gap: 22px; }
+    .ach-summary .ach-stat .num { font-size: 1.3rem; }
+
+    /* Streak best label smaller on mobile */
+    .streak-best { display: none; }
+  }
+
+  /* Tiny phones (e.g. iPhone SE 1st gen at 320px) */
+  @media (max-width: 380px) {
+    .brand h1 { font-size: 1.5rem; }
+    .table { padding: 14px 10px; }
+    .card { width: 52px; height: 74px; padding: 3px 5px; }
+    .card .rank { font-size: 0.9rem; }
+    .card .suit-small { font-size: 0.7rem; }
+    .card .suit-big { font-size: 1.4rem; }
+    .cards { gap: 4px; min-height: 80px; }
+    .chip { width: 44px; height: 44px; font-size: 0.72rem; }
+    .chips { gap: 6px; }
+    .bet-amount { font-size: 1.6rem; }
+    .controls .btn { padding: 12px 2px; font-size: 0.72rem; letter-spacing: 0.5px; }
+    .bet-actions .btn { padding: 10px 2px; font-size: 0.72rem; }
+    .stat-value { font-size: 0.95rem; }
+    .stat-label { font-size: 0.58rem; }
+    .dealer-pill { font-size: 0.95rem; padding: 8px 0; }
+    .play-row { grid-template-columns: 72px 1fr; padding: 7px 8px; }
   }
 </style>
 </head>
@@ -896,6 +1630,7 @@
   <header>
     <div class="brand">
       <h1>The Pit</h1>
+      <div class="ornament"><span class="diamond"></span><span class="diamond"></span></div>
       <p>blackjack by the book</p>
     </div>
     <div class="stats-bar">
@@ -906,6 +1641,10 @@
       <div class="stat">
         <div class="stat-label">Accuracy</div>
         <div class="stat-value" id="accuracy">—</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Streak</div>
+        <div class="stat-value" id="streak">0</div>
       </div>
       <div class="stat">
         <div class="stat-label">Hands</div>
@@ -935,8 +1674,9 @@
 
   <div class="footnote">
     Rules: 6 decks, dealer stands on soft 17, double after split allowed, no surrender, blackjack pays 3:2.
-    &nbsp;·&nbsp; <a id="open-chart">View strategy chart</a>
-    &nbsp;·&nbsp; <a id="reset-stats">Reset stats</a>
+    <span class="sep">◆</span> <button type="button" class="link-btn" id="open-chart">View strategy chart</button>
+    <span class="sep">◆</span> <button type="button" class="link-btn" id="open-achievements">Achievements <span class="ach-count" id="ach-count"></span></button>
+    <span class="sep">◆</span> <button type="button" class="link-btn" id="reset-stats">Reset stats</button>
   </div>
 
 </div>
@@ -965,6 +1705,31 @@
     </div>
   </div>
 </div>
+
+<!-- Reset confirmation modal -->
+<div class="modal-bg" id="reset-modal">
+  <div class="modal confirm-modal">
+    <h2>Reset stats?</h2>
+    <p class="confirm-body">This will clear your accuracy record, hands played, and reset your bankroll to <strong>$1,000</strong>. Earned achievements will be kept.</p>
+    <div class="confirm-actions">
+      <button class="btn" id="reset-cancel">Cancel</button>
+      <button class="btn primary" id="reset-confirm">Reset</button>
+    </div>
+  </div>
+</div>
+
+<!-- Achievements showcase modal -->
+<div class="modal-bg" id="achievements-modal">
+  <div class="modal achievements-modal">
+    <button class="close" id="close-achievements">×</button>
+    <h2>Achievements</h2>
+    <div class="ach-summary" id="ach-summary"></div>
+    <div class="ach-grid" id="ach-grid"></div>
+  </div>
+</div>
+
+<!-- Toast host (fixed top-right for achievement unlocks) -->
+<div id="toast-host" class="toast-host"></div>
 
 <script>
 //================================================================
@@ -1227,10 +1992,87 @@ const state = {
   feedback: null,
   cardsDealtThisHand: 0,
   decisions: [],
-  showRecap: false
+  showRecap: false,
+
+  // === Persistent extended tracking (saved to localStorage) ===
+  peakBankroll: 1000,
+  currentStreak: 0,            // current correct-decision streak (lifetime, resets on mistake)
+  longestStreak: 0,            // best decision streak ever
+  currentWinStreak: 0,         // consecutive winning hands (net positive)
+  longestWinStreak: 0,
+  currentLossStreak: 0,        // consecutive losing hands (net negative)
+  longestLossStreak: 0,
+  hadLossStreakOf5: false,     // for the Survivor achievement
+  perSituation: {
+    hard:  { correct: 0, total: 0 },
+    soft:  { correct: 0, total: 0 },
+    pairs: { correct: 0, total: 0 }
+  },
+  blackjacks: 0,
+  largestWin: 0,
+  correctSplits: 0,
+  correctDoubles: 0,
+  hard16v10Correct: 0,
+  softHandsCorrectStreak: 0,   // current consecutive correct soft-hand decisions
+  recentDecisions: [],         // rolling buffer of last 200 decisions (each: 1 or 0)
+  wentBelow100: false,
+  made5CardHand: false,
+  achievements: {},            // { 'first_blood': '2026-06-01T...', ... }
+  lastPlayedAt: null,
+
+  // Transient (not persisted)
+  unlockQueue: [],             // achievement IDs queued to show as toasts
+  showAchievements: false
 };
 
 state.shoe = newShoe();
+
+//================================================================
+// Persistence layer
+//================================================================
+const STORAGE_KEY = 'thePit.v1';
+const PERSISTENT_FIELDS = [
+  'bankroll', 'pendingBet', 'stats', 'handsPlayed',
+  'peakBankroll', 'currentStreak', 'longestStreak',
+  'currentWinStreak', 'longestWinStreak',
+  'currentLossStreak', 'longestLossStreak', 'hadLossStreakOf5',
+  'perSituation', 'blackjacks', 'largestWin',
+  'correctSplits', 'correctDoubles', 'hard16v10Correct',
+  'softHandsCorrectStreak', 'recentDecisions',
+  'wentBelow100', 'made5CardHand',
+  'achievements', 'lastPlayedAt'
+];
+
+function saveState() {
+  try {
+    const blob = { version: 1 };
+    for (const k of PERSISTENT_FIELDS) blob[k] = state[k];
+    blob.lastPlayedAt = new Date().toISOString();
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(blob));
+  } catch (e) {
+    // localStorage may be unavailable (privacy mode, quota); silent fail
+  }
+}
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    const blob = JSON.parse(raw);
+    if (!blob || blob.version !== 1) return;
+    for (const k of PERSISTENT_FIELDS) {
+      if (blob[k] !== undefined) state[k] = blob[k];
+    }
+  } catch (e) {
+    // corrupted or unavailable; ignore
+  }
+}
+
+function clearStorage() {
+  try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
+}
+
+loadState();
 
 // Reshuffle if the shoe is getting low (75% penetration cut)
 function ensureShoe() {
@@ -1280,11 +2122,25 @@ function deal() {
       state.hands[0].payout = state.hands[0].bet * (1 + RULES.bjPays);
       state.bankroll += state.hands[0].payout;
       state.feedback = { kind: 'note', head: 'Blackjack!', body: `Natural 21 pays 3:2. You won <strong>$${(state.hands[0].bet * RULES.bjPays).toLocaleString()}</strong>.` };
+      state.blackjacks++;
+      state.currentWinStreak++;
+      state.currentLossStreak = 0;
+      if (state.currentWinStreak > state.longestWinStreak) state.longestWinStreak = state.currentWinStreak;
+      const profit = state.hands[0].payout - state.hands[0].bet;
+      if (profit > state.largestWin) state.largestWin = profit;
     } else {
       state.hands[0].result = 'loss';
       state.feedback = { kind: 'note', head: 'Dealer blackjack', body: `Dealer turns over a natural 21. Bet lost.` };
+      state.currentLossStreak++;
+      state.currentWinStreak = 0;
+      if (state.currentLossStreak > state.longestLossStreak) state.longestLossStreak = state.currentLossStreak;
+      if (state.currentLossStreak >= 5) state.hadLossStreakOf5 = true;
     }
     state.handsPlayed++;
+    if (state.bankroll > state.peakBankroll) state.peakBankroll = state.bankroll;
+    if (state.bankroll < 100) state.wentBelow100 = true;
+    checkAchievements();
+    saveState();
   }
 
   render();
@@ -1298,6 +2154,202 @@ function getHandOptions(hand) {
   };
 }
 
+//================================================================
+// Achievements
+//================================================================
+const ACHIEVEMENTS = [
+  {
+    id: 'first_blood',
+    name: 'First Blood',
+    description: 'Hit your first natural blackjack.',
+    tier: 'bronze',
+    check: (s) => s.blackjacks >= 1
+  },
+  {
+    id: 'by_the_book',
+    name: 'By the Book',
+    description: '25 correct decisions in a row.',
+    tier: 'silver',
+    progress: (s) => Math.min(s.longestStreak, 25),
+    target: 25,
+    check: (s) => s.longestStreak >= 25
+  },
+  {
+    id: 'lucky_bastard',
+    name: 'Lucky Bastard',
+    description: 'Win 5 hands in a row.',
+    tier: 'bronze',
+    progress: (s) => Math.min(s.longestWinStreak, 5),
+    target: 5,
+    check: (s) => s.longestWinStreak >= 5
+  },
+  {
+    id: 'survivor',
+    name: 'Cold Streak Survivor',
+    description: 'Recover from a 5-hand losing streak with a win.',
+    tier: 'silver',
+    check: (s) => s.hadLossStreakOf5 && s.currentWinStreak >= 1
+  },
+  {
+    id: 'hard16',
+    name: 'Hard 16 Hero',
+    description: 'Correctly play hard 16 vs dealer 10 ten times.',
+    tier: 'silver',
+    progress: (s) => Math.min(s.hard16v10Correct, 10),
+    target: 10,
+    check: (s) => s.hard16v10Correct >= 10
+  },
+  {
+    id: 'soft_spot',
+    name: 'Soft Spot',
+    description: '50 correct soft-hand decisions in a row.',
+    tier: 'gold',
+    progress: (s) => Math.min(s.softHandsCorrectStreak, 50),
+    target: 50,
+    check: (s) => s.softHandsCorrectStreak >= 50
+  },
+  {
+    id: 'splitter',
+    name: 'Splitter',
+    description: 'Correctly split 10 times.',
+    tier: 'bronze',
+    progress: (s) => Math.min(s.correctSplits, 10),
+    target: 10,
+    check: (s) => s.correctSplits >= 10
+  },
+  {
+    id: 'doubler',
+    name: 'Down the Middle',
+    description: 'Correctly double 25 times.',
+    tier: 'silver',
+    progress: (s) => Math.min(s.correctDoubles, 25),
+    target: 25,
+    check: (s) => s.correctDoubles >= 25
+  },
+  {
+    id: 'high_roller',
+    name: 'High Roller',
+    description: 'Win $500 or more on a single hand.',
+    tier: 'gold',
+    check: (s) => s.largestWin >= 500
+  },
+  {
+    id: 'whale',
+    name: 'Whale',
+    description: 'Push your bankroll above $5,000.',
+    tier: 'gold',
+    progress: (s) => Math.min(s.peakBankroll, 5000),
+    target: 5000,
+    check: (s) => s.peakBankroll >= 5000
+  },
+  {
+    id: 'pit_boss',
+    name: 'Pit Boss',
+    description: 'Play 1,000 lifetime hands.',
+    tier: 'gold',
+    progress: (s) => Math.min(s.handsPlayed, 1000),
+    target: 1000,
+    check: (s) => s.handsPlayed >= 1000
+  },
+  {
+    id: 'mathematician',
+    name: 'Mathematician',
+    description: '95%+ accuracy over your last 200 decisions.',
+    tier: 'platinum',
+    check: (s) => {
+      if (s.recentDecisions.length < 200) return false;
+      const correct = s.recentDecisions.reduce((a,b) => a+b, 0);
+      return (correct / s.recentDecisions.length) >= 0.95;
+    }
+  },
+  // Hidden achievements
+  {
+    id: 'comeback',
+    name: 'The Comeback',
+    description: 'Climb from below $100 back to $1,000.',
+    tier: 'gold',
+    hidden: true,
+    check: (s) => s.wentBelow100 && s.bankroll >= 1000
+  },
+  {
+    id: 'charlie',
+    name: 'Five-Card Charlie',
+    description: 'Make a 5-card hand without busting.',
+    tier: 'silver',
+    hidden: true,
+    check: (s) => s.made5CardHand
+  },
+  {
+    id: 'perfect_storm',
+    name: 'Perfect Storm',
+    description: '100 hands at 100% accuracy.',
+    tier: 'platinum',
+    hidden: true,
+    check: (s) => {
+      // Approximation: need a 100-decision rolling window perfectly correct
+      // Use longestStreak as a proxy — if you have a streak >= 100, you've earned it
+      return s.longestStreak >= 100;
+    }
+  }
+];
+
+function checkAchievements() {
+  for (const ach of ACHIEVEMENTS) {
+    if (state.achievements[ach.id]) continue;  // already earned
+    if (ach.check(state)) {
+      state.achievements[ach.id] = new Date().toISOString();
+      state.unlockQueue.push(ach.id);
+    }
+  }
+  if (state.unlockQueue.length > 0) {
+    flushAchievementToasts();
+  }
+}
+
+//================================================================
+// Achievement toast UI
+//================================================================
+let toastIndex = 0;
+function flushAchievementToasts() {
+  const host = $('toast-host');
+  if (!host) return;
+  while (state.unlockQueue.length > 0) {
+    const id = state.unlockQueue.shift();
+    const ach = ACHIEVEMENTS.find(a => a.id === id);
+    if (!ach) continue;
+    const myIndex = toastIndex++;
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${ach.tier}`;
+    toast.innerHTML = `
+      <div class="toast-tier">${ach.tier}</div>
+      <div class="toast-name">${ach.name}</div>
+      <div class="toast-desc">${ach.description}</div>
+    `;
+    host.appendChild(toast);
+    // Trigger entrance
+    requestAnimationFrame(() => toast.classList.add('show'));
+    // Auto dismiss after 5s
+    setTimeout(() => {
+      toast.classList.remove('show');
+      toast.classList.add('hide');
+      setTimeout(() => toast.remove(), 500);
+    }, 5000);
+    // Click to dismiss
+    toast.addEventListener('click', () => {
+      toast.classList.remove('show');
+      toast.classList.add('hide');
+      setTimeout(() => toast.remove(), 500);
+    });
+  }
+}
+
+function getSituationCategory(cards, fromSplit) {
+  // Determine which category the player's decision falls under
+  if (isPair(cards) && !fromSplit && cards.length === 2) return 'pairs';
+  const info = handInfo(cards);
+  return info.soft ? 'soft' : 'hard';
+}
+
 function recordDecision(action, optimal, raw) {
   state.stats.total++;
   const correct = (action === optimal);
@@ -1306,6 +2358,41 @@ function recordDecision(action, optimal, raw) {
   const dealerUp = rankValue(state.dealer[0].rank);
   const opts = getHandOptions(state.hands[state.active]);
   const reason = reasoning(cards, dealerUp, raw, opts, state.hands[state.active].fromSplit);
+
+  // === Extended tracking ===
+  // Per-situation stats
+  const category = getSituationCategory(cards, state.hands[state.active].fromSplit);
+  state.perSituation[category].total++;
+  if (correct) state.perSituation[category].correct++;
+
+  // Decision streak
+  if (correct) {
+    state.currentStreak++;
+    if (state.currentStreak > state.longestStreak) state.longestStreak = state.currentStreak;
+  } else {
+    state.currentStreak = 0;
+  }
+
+  // Rolling buffer for accuracy-over-N achievements
+  state.recentDecisions.push(correct ? 1 : 0);
+  if (state.recentDecisions.length > 200) state.recentDecisions.shift();
+
+  // Scenario counters
+  if (correct && action === 'split') state.correctSplits++;
+  if (correct && action === 'double') state.correctDoubles++;
+
+  // Hard 16 vs 10 (no surrender — book is hit; track correct plays)
+  const info = handInfo(cards);
+  if (info.total === 16 && !info.soft && !isPair(cards) && dealerUp === 10 && correct) {
+    state.hard16v10Correct++;
+  }
+
+  // Soft-hand correct streak
+  if (info.soft && !isPair(cards)) {
+    if (correct) state.softHandsCorrectStreak++;
+    else state.softHandsCorrectStreak = 0;
+  }
+
   state.decisions.push({
     handIndex: state.active,
     cards: cards.map(c => ({ rank: c.rank, suit: c.suit })),
@@ -1480,17 +2567,58 @@ function settleHands() {
   }
   state.phase = 'settled';
   state.handsPlayed++;
-  // Feedback summary
+
+  // === Extended tracking on settlement ===
+  // Net result of this round
   let netGain = 0;
+  for (const h of state.hands) netGain += (h.payout - h.bet);
+
+  // Track win/loss streaks based on net result
+  if (netGain > 0) {
+    state.currentWinStreak++;
+    state.currentLossStreak = 0;
+    if (state.currentWinStreak > state.longestWinStreak) state.longestWinStreak = state.currentWinStreak;
+  } else if (netGain < 0) {
+    state.currentLossStreak++;
+    state.currentWinStreak = 0;
+    if (state.currentLossStreak > state.longestLossStreak) state.longestLossStreak = state.currentLossStreak;
+    if (state.currentLossStreak >= 5) state.hadLossStreakOf5 = true;
+  } // push leaves both untouched
+
+  // Largest single-hand profit
   for (const h of state.hands) {
-    netGain += (h.payout - h.bet);
+    const profit = h.payout - h.bet;
+    if (profit > state.largestWin) state.largestWin = profit;
   }
+
+  // Peak bankroll
+  if (state.bankroll > state.peakBankroll) state.peakBankroll = state.bankroll;
+  if (state.bankroll < 100) state.wentBelow100 = true;
+
+  // Detect 5+ card non-bust hand
+  for (const h of state.hands) {
+    if (h.cards.length >= 5 && handInfo(h.cards).total <= 21) state.made5CardHand = true;
+  }
+
+  // Detect natural blackjack(s)
+  for (const h of state.hands) {
+    if (h.cards.length === 2 && handInfo(h.cards).total === 21 && !h.fromSplit) {
+      state.blackjacks++;
+    }
+  }
+
+  // Feedback summary
   if (!state.feedback || state.feedback.kind !== 'note') {
     if (netGain > 0) state.feedback = { kind: 'note', head: `You won $${netGain.toLocaleString()}`, body: 'Hand resolved. Click <strong>Next Hand</strong> to keep playing.' };
     else if (netGain < 0) state.feedback = { kind: 'note', head: `You lost $${(-netGain).toLocaleString()}`, body: 'Hand resolved. Click <strong>Next Hand</strong> to keep playing.' };
     else state.feedback = { kind: 'note', head: 'Push', body: 'You break even on this hand.' };
   }
   state.showRecap = state.decisions.length > 0;
+
+  // Run achievement check before save
+  checkAchievements();
+
+  saveState();
   render();
 }
 
@@ -1526,6 +2654,30 @@ function resetStats() {
   state.handsPlayed = 0;
   state.bankroll = 1000;
   state.pendingBet = 25;
+  state.peakBankroll = 1000;
+  state.currentStreak = 0;
+  state.longestStreak = 0;
+  state.currentWinStreak = 0;
+  state.longestWinStreak = 0;
+  state.currentLossStreak = 0;
+  state.longestLossStreak = 0;
+  state.hadLossStreakOf5 = false;
+  state.perSituation = {
+    hard:  { correct: 0, total: 0 },
+    soft:  { correct: 0, total: 0 },
+    pairs: { correct: 0, total: 0 }
+  };
+  state.blackjacks = 0;
+  state.largestWin = 0;
+  state.correctSplits = 0;
+  state.correctDoubles = 0;
+  state.hard16v10Correct = 0;
+  state.softHandsCorrectStreak = 0;
+  state.recentDecisions = [];
+  state.wentBelow100 = false;
+  state.made5CardHand = false;
+  // achievements stay — they're earned permanently
+  saveState();
   nextHand();
 }
 
@@ -1786,7 +2938,24 @@ function renderHeader() {
     const pct = Math.round(100 * state.stats.correct / state.stats.total);
     $('accuracy').textContent = `${pct}% (${state.stats.correct}/${state.stats.total})`;
   }
+  // Streak: show current with best as a subtle tail
+  const cur = state.currentStreak;
+  const best = state.longestStreak;
+  if (best === 0) {
+    $('streak').textContent = '0';
+  } else if (cur === 0) {
+    $('streak').innerHTML = `0 <span class="streak-best">best ${best}</span>`;
+  } else if (cur === best) {
+    $('streak').innerHTML = `<span class="streak-hot">${cur}</span>`;
+  } else {
+    $('streak').innerHTML = `${cur} <span class="streak-best">best ${best}</span>`;
+  }
   $('hand-count').textContent = state.handsPlayed;
+  // Achievements count
+  const earned = Object.keys(state.achievements).length;
+  if (earned > 0 && $('ach-count')) {
+    $('ach-count').textContent = `(${earned})`;
+  }
 }
 
 function render() {
@@ -1796,6 +2965,84 @@ function render() {
   renderCoach();
   renderControls();
   renderRecap();
+  renderAchievements();
+}
+
+function renderAchievements() {
+  const modal = $('achievements-modal');
+  if (!state.showAchievements) {
+    modal.classList.remove('open');
+    return;
+  }
+
+  const earned = ACHIEVEMENTS.filter(a => state.achievements[a.id]);
+  const visible = ACHIEVEMENTS.filter(a => !a.hidden || state.achievements[a.id]);
+  const hiddenLocked = ACHIEVEMENTS.filter(a => a.hidden && !state.achievements[a.id]);
+
+  $('ach-summary').innerHTML = `
+    <div class="ach-stat"><span class="num">${earned.length}</span><span class="lbl">earned</span></div>
+    <div class="ach-stat"><span class="num">${ACHIEVEMENTS.length}</span><span class="lbl">total</span></div>
+    <div class="ach-stat"><span class="num">${Math.round(100 * earned.length / ACHIEVEMENTS.length)}%</span><span class="lbl">complete</span></div>
+  `;
+
+  const grid = $('ach-grid');
+  grid.innerHTML = '';
+
+  for (const ach of visible) {
+    const earnedAt = state.achievements[ach.id];
+    const isEarned = !!earnedAt;
+    const card = document.createElement('div');
+    card.className = `ach-card tier-${ach.tier} ${isEarned ? 'earned' : 'locked'}`;
+
+    let progressHTML = '';
+    if (!isEarned && ach.progress && ach.target) {
+      const cur = ach.progress(state);
+      const pct = Math.round(100 * cur / ach.target);
+      progressHTML = `
+        <div class="ach-progress">
+          <div class="ach-progress-bar"><div class="ach-progress-fill" style="width:${pct}%"></div></div>
+          <div class="ach-progress-text">${cur} / ${ach.target}</div>
+        </div>
+      `;
+    }
+
+    let dateHTML = '';
+    if (isEarned) {
+      try {
+        const d = new Date(earnedAt);
+        const opts = { year: 'numeric', month: 'short', day: 'numeric' };
+        dateHTML = `<div class="ach-earned-date">Earned ${d.toLocaleDateString(undefined, opts)}</div>`;
+      } catch {}
+    }
+
+    card.innerHTML = `
+      <div class="ach-medal">${getTierGlyph(ach.tier)}</div>
+      <div class="ach-name">${ach.name}</div>
+      <div class="ach-desc">${ach.description}</div>
+      ${progressHTML}
+      ${dateHTML}
+    `;
+    grid.appendChild(card);
+  }
+
+  // Add hidden-locked placeholder cards
+  for (const ach of hiddenLocked) {
+    const card = document.createElement('div');
+    card.className = 'ach-card locked hidden-card';
+    card.innerHTML = `
+      <div class="ach-medal">?</div>
+      <div class="ach-name">Hidden</div>
+      <div class="ach-desc">Keep playing to discover.</div>
+    `;
+    grid.appendChild(card);
+  }
+
+  modal.classList.add('open');
+}
+
+function getTierGlyph(tier) {
+  // Simple bullet, the CSS color handles the tier feel
+  return '◆';
 }
 
 function renderRecap() {
@@ -2065,8 +3312,36 @@ $('recap-modal').addEventListener('click', (e) => {
   }
 });
 $('reset-stats').addEventListener('click', () => {
-  if (confirm('Reset stats and bankroll to $1,000?')) resetStats();
+  $('reset-modal').classList.add('open');
 });
+$('reset-cancel').addEventListener('click', () => {
+  $('reset-modal').classList.remove('open');
+});
+$('reset-confirm').addEventListener('click', () => {
+  $('reset-modal').classList.remove('open');
+  resetStats();
+});
+$('reset-modal').addEventListener('click', (e) => {
+  if (e.target === $('reset-modal')) $('reset-modal').classList.remove('open');
+});
+
+$('open-achievements').addEventListener('click', () => {
+  state.showAchievements = true;
+  render();
+});
+$('close-achievements').addEventListener('click', () => {
+  state.showAchievements = false;
+  render();
+});
+$('achievements-modal').addEventListener('click', (e) => {
+  if (e.target === $('achievements-modal')) {
+    state.showAchievements = false;
+    render();
+  }
+});
+
+// Initial achievement check (in case loaded state already qualifies for ones not previously triggered)
+checkAchievements();
 
 render();
 </script>
